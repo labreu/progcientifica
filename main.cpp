@@ -9,6 +9,7 @@
 #define BOARD_SIZE 3
 
 using namespace std;
+    // g++ main.cpp -o main && ./main
 
     // posicoes
     //  0 1 2
@@ -94,7 +95,6 @@ class Board{
         }
 
         void initialize_random_board(){
-            srand(time(NULL));
             int n = 1;
             int nullcell_pos = rand() % (BOARD_SIZE*BOARD_SIZE);
 
@@ -211,7 +211,7 @@ class Solver{
                 // Get current null cell
                 board.get_null_cell();
 
-                // For each available move
+                // For each available move (up down left right)
                 for (int i=0; i<4; i++){
                     if (board.nc.posicoes[i] != CELULA_INVALIDA){
                         Board tmp = board;
@@ -237,7 +237,9 @@ class Solver{
 
 int main(int argc, char const *argv[])
 {
+    srand(time(NULL));
     
+    // Puzzle Inicial
     cout << "Puzzle Inicial" << endl;
     Board b = Board();    
     b.initialize_random_board();
@@ -247,9 +249,11 @@ int main(int argc, char const *argv[])
     Board target = Board();    
     target.initialize_target_board();
 
+    // BFS
     Solver s;
     s.solve_board_bfs(target, b, true);
 
+    // DFS
     Solver s2;
     s2.solve_board_bfs(target, b, false);
     // s.solution.print_board();
