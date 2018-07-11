@@ -156,6 +156,7 @@ class Board{
 };
 int main(int argc, char const *argv[])
 {   
+    // g++ jogo_velha.cpp -o main && ./main
     srand(time(NULL));
     Board b;
     // b.play9moves();
