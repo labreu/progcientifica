@@ -72,9 +72,10 @@ class Board{
                 initializeTargetBoard();
             }
             else{
-                initializeRandomBoard();
                 cout << "Tabuleiro iniciado aleatoriamente" << endl;
+                initializeRandomBoard();
             }
+            // printBoard();
         }
 
         bool checaMovimentoValido(int i){
@@ -89,9 +90,10 @@ class Board{
             int n = 1;
             for(int i=0; i<BOARD_SIZE*BOARD_SIZE; i++){
                 if(i==8) board[i] = Cell(i, CELULA_NULA);
-                else board[i] = Cell(i, n);
-                n++;
+                else {board[i] = Cell(i, n);
+                n++;}
             }
+            
         }
         void initializeFixBoard(){
             // | 1 | 2 | 3
@@ -221,10 +223,10 @@ class Solver{
             if(useBFS) cout << "BFS: " ;
             else cout << "DFS: " ;
 
-            // Checa se ja está no target e adiciona ao cache
+            // Checa fim e adiciona ao cache
             if (checkFim(b) || inCache(b, b)) return true;
 
-            // Add a fila/pilha dependendo do argumento use_bfs
+            // Add a fila/pilha dependendo do argumento useBfs
             list<Board> F;
             F.push_back(b);
 
@@ -237,7 +239,7 @@ class Solver{
                     board = F.front();
                     F.pop_front();
                 }
-                else{
+                else{ //DFS
                     board = F.back();
                     F.pop_back();
                 }
@@ -266,7 +268,7 @@ class Solver{
                         // Checa fim
                         if (checkFim(nextBoard)) return true;
                         
-                        // Adiciona a arvore
+                        // Adiciona a fila/pilha
                         F.push_back(nextBoard);
                     }
                 }
@@ -283,12 +285,12 @@ int main(int argc, char const *argv[])
     
     Solver s;
     s.solveBoardBFS(b, true);  //true BFS
-    s.showSolution(b, false);
+    s.showSolution(b, true);
 
     // DFS
-    s = Solver();
-    s.solveBoardBFS(b, false); //false DFS
-    s.showSolution(b, false);
+    // s = Solver();
+    // s.solveBoardBFS(b, false); //false DFS
+    // s.showSolution(b, false);
 
    
 }   
