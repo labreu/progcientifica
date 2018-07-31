@@ -11,7 +11,7 @@ class Board{
         bool gameOver;
         int winner;
 
-    Board(): gameOver(false){
+    Board(): gameOver(false), winner(-1){
         for(int i=0; i<9; i++) board[i] = UNPLAYED_CELL;
     }
 
@@ -82,6 +82,7 @@ class Board{
                 }
                 gameOver = false; //reset flag
                 return true;
+
             } 
         }
         return false;
@@ -94,8 +95,8 @@ class Board{
         return true;
     }
     int minSearch(int level){
-        if (isGameOver() && winner==0) { return 10; }
-        else if (isGameOver() && winner==1) { return -10; }
+        if (isGameOver() && winner==0) { return -10; }
+        else if (isGameOver() && winner==1) { return 10; }
         else if (isVelha()) { return 0; }
 
         int score = 999;
@@ -103,7 +104,7 @@ class Board{
         for (int i = 0; i < 9; i++){
             if (board[i] == UNPLAYED_CELL){
                 board[i] = 1;
-                score = min(score, maxSearch(level+1)+level);
+                score = min(score, maxSearch(level)-level);
                 board[i] = UNPLAYED_CELL;
             }
         }
@@ -111,8 +112,8 @@ class Board{
     }
 
     int maxSearch(int level) {
-        if (isGameOver() && winner==0) { return 10; }
-        else if (isGameOver() && winner==1) { return -10; }
+        if (isGameOver() && winner==0) { return -10; }
+        else if (isGameOver() && winner==1) { return 10; }
         else if (isVelha()) { return 0; }
 
         int score = -999;
@@ -120,7 +121,7 @@ class Board{
         for (int i = 0; i < 9; i++){
             if (board[i] == UNPLAYED_CELL){
                 board[i] = 0;
-                score = max(score, minSearch(level+1)-level);
+                score = max(score, minSearch(level)+level);
                 board[i] = UNPLAYED_CELL;
             }
         }
@@ -128,24 +129,27 @@ class Board{
     }
 
     int minimax() {
-        int score = 999;
-        int move = -1;
+        int score = -999;
+        int move;
         int maxScore;
         int level = 0;
-
+        if( isGameOver() ) return -1;
+        
         for (int i = 0; i < 9; i++){
             if (board[i] == UNPLAYED_CELL){
                 // AI plays
                 board[i] = 1;
 
                 // Do max search
-                maxScore = maxSearch(level);
+                maxScore = maxSearch(level+1);
 
                 // if this score is better than the best, play it
-                if (maxScore < score){
+                if (maxScore > score){
                     score = maxScore;
                     move = i;
+                    
                 }
+                cout << i << " " << score << endl;
                 board[i] = UNPLAYED_CELL;
             }
         }
@@ -169,7 +173,7 @@ int main(int argc, char const *argv[])
     while(!b.isGameOver()){
         if ((turn % 2) == 0){
             move = b.minimax();
-            if (move == -1){ cout << "Move -1" << endl; break;}
+            if (move == -1){ cout << "Velha" << endl; break;}
             else b.board[move] = 1;
         }
         else{

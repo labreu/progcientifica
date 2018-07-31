@@ -63,7 +63,7 @@ class Cell{
 
 class Board{
     public:
-        Cell board[3*3];
+        Cell board[9];
         Cell nc;
         Board(){}
 
@@ -238,7 +238,7 @@ class Solver{
 int main(int argc, char const *argv[])
 {
     srand(time(NULL));
-    
+
     // Puzzle Inicial
     cout << "Puzzle Inicial" << endl;
     Board b = Board();    
@@ -248,7 +248,9 @@ int main(int argc, char const *argv[])
     // Target
     Board target = Board();    
     target.initialize_target_board();
+    target.print_board();
 
+    cout << target.toString() << endl;
     // BFS
     Solver s;
     s.solve_board_bfs(target, b, true);
