@@ -3,12 +3,14 @@
 #include<map>
 #include<list>
 #include<string>
+#include<vector>
 
 #define CELULA_NULA -1  // CELULA QUE É POSSIVEL MOVIMENTO 
 #define CELULA_INVALIDA -2  // CELULA QUE É IMPOSSIVEL MOVIMENTO 
 #define BOARD_SIZE 3  //LARGURA DO TABULEIRO QUADRADO
 
 using namespace std;
+
 
 class Cell{
     public:
@@ -164,6 +166,52 @@ class Board{
 };
 
 
+class No{
+    public:
+        Board b;
+        int h;
+        No():h(-1){}
+        No(Board &b, int h): h(h), b(b){}
+};
+
+bool ordenacao(No n1, No n2){
+    return (n1.h < n2.h);
+}
+
+
+int manhattan_distance(Board b1, Board b2){
+    //QUAL A DISTANCIA DE CADA PEÇA DO TABULEIRO B1 PARA CHEGAR NO B2?
+    //PARA CADA PECA DE B1
+    //QUAL DEVERIA SER A POSICAO EM B2?
+    //CALCULA DISTANCIA |X1-X2| + |Y1-Y2|
+    
+    // POSICOES
+    // 0   1  2  3  4  5  6  7  8
+    // 00 01 02 10 11 12 20 21 22
+    // Board b = Board("random");
+    // Board t = Board("target");
+    // b.printBoard();
+    // t.printBoard();
+    // cout << "Manhattan distance: " << manhattan_distance(b, t) << endl;
+    int mann_distance = 0;
+    for(int i=0; i<BOARD_SIZE*BOARD_SIZE; i++){
+        for(int j=0; j<BOARD_SIZE*BOARD_SIZE; j++){
+            if (b1.board[i].isnull()) continue;
+            if (b1.board[i].valor==b2.board[j].valor){
+                int x1 = i / BOARD_SIZE;
+                int x2 = j / BOARD_SIZE;
+                int y1 = i % BOARD_SIZE;
+                int y2 = j % BOARD_SIZE;
+                int dist = abs(x1-x2) + abs(y1-y2);
+                mann_distance += dist;
+                // cout << "N: " << b1.board[i].valor << " " << x1 << "x" << y1 << " - " << x2 << "x" << y2 << " D:" << dist << endl;
+            }
+        }
+    }
+    return mann_distance;
+}
+
+
 class Solver{
     public:
         int count, movimentos;
@@ -215,7 +263,7 @@ class Solver{
             cout << "FIM -- " << movimentos << " movimentos." << endl;
         }
 
-        bool solveBoardBFS(Board b, bool useBFS){
+        bool solveBoardBFS(Board b, bool useBFS, bool useHeuristica){
             if(useBFS) cout << "BFS: " ;
             else cout << "DFS: " ;
 
@@ -253,6 +301,7 @@ class Solver{
 
                 // Para cada posicao vazia em torno da celula vazia
                 // 4 posicoes = cima, baixo, direita e esquerda
+                vector<No> proximosNos(4);
                 for (int i=0; i<4; i++){ 
                     if (board.checaMovimentoValido(i)){
                         // Troca celula nula com o vizinho com movimento valido
@@ -260,13 +309,38 @@ class Solver{
                         nextBoard.swap(nextBoard.celulaNula.i, nextBoard.celulaNula.vizinhos[i]);
                         
                         // Checa cache
-                        if (inCache(nextBoard, board)) continue;
+                        if (inCache(nextBoard, board)) {
+                            proximosNos[i] = No();
+                            continue;
+                        }
 
                         // Checa fim
                         if (checkFim(nextBoard)) return true;
                         
-                        // Adiciona a fila/pilha
-                        F.push_back(nextBoard);
+                        if (useHeuristica){
+                            // Calcula heuristica
+                            int md = manhattan_distance(nextBoard, target);
+                            proximosNos[i] = No(nextBoard, md);
+                            // cout << "MD: " << proximosNos[i].h << endl;
+                        }
+                        else{
+                            F.push_back(nextBoard);
+                        }
+                    }
+                    else{
+                        proximosNos[i] = No();
+                    }
+                }
+
+                if (useHeuristica){
+                    // Ordena best first search
+                    sort(proximosNos.begin(), proximosNos.end(), ordenacao);
+                    
+                    // Adiciona a fila/pilha
+                    for(int i=0; i< 4; i++){
+                        if (proximosNos[i].h < 0) continue;
+                        // cout << "H: " << proximosNos[i].h << endl;
+                        F.push_back(proximosNos[i].b);
                     }
                 }
             }
@@ -276,51 +350,24 @@ class Solver{
 
 
 
-int manhattan_distance(Board b1, Board b2){
-    //QUAL A DISTANCIA DE CADA PEÇA DO TABULEIRO B1 PARA CHEGAR NO B2?
-    //PARA CADA PECA DE B1
-    //QUAL DEVERIA SER A POSICAO EM B2?
-    //CALCULA DISTANCIA |X1-X2| + |Y1-Y2|
-    
-    // POSICOES
-    // 0   1  2  3  4  5  6  7  8
-    // 00 01 02 10 11 12 20 21 22
-    // Board b = Board("random");
-    // Board t = Board("target");
-    // b.printBoard();
-    // t.printBoard();
-    // cout << "Manhattan distance: " << manhattan_distance(b, t) << endl;
-    int mann_distance = 0;
-    for(int i=0; i<BOARD_SIZE*BOARD_SIZE; i++){
-        for(int j=0; j<BOARD_SIZE*BOARD_SIZE; j++){
-            if (b1.board[i].isnull()) continue;
-            if (b1.board[i].valor==b2.board[j].valor){
-                int x1 = i / BOARD_SIZE;
-                int x2 = j / BOARD_SIZE;
-                int y1 = i % BOARD_SIZE;
-                int y2 = j % BOARD_SIZE;
-                int dist = abs(x1-x2) + abs(y1-y2);
-                mann_distance += dist;
-                cout << "N: " << b1.board[i].valor << " " << x1 << "x" << y1 << " - " << x2 << "x" << y2 << " D:" << dist << endl;
-            }
-        }
-    }
-    return mann_distance;
-}
-
 int main(int argc, char const *argv[])
 {
     srand(time(NULL));
     Board b = Board("random"); //random, fix or target
 
+    // Breadth first search
     Solver s;
-    s.solveBoardBFS(b, true);  //true BFS
-    s.showSolution(b, true);
-
-    // DFS
-    // s = Solver();
-    // s.solveBoardBFS(b, false); //false DFS
+    s.solveBoardBFS(b, true, false);  
     // s.showSolution(b, false);
 
+    // Best first search
+    s = Solver();
+    s.solveBoardBFS(b, true, true); 
+    // s.showSolution(b, false);
+
+    // Depth first search
+    s = Solver();
+    s.solveBoardBFS(b, false, false); 
+    // s.showSolution(b, false);
    
 }   
