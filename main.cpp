@@ -275,11 +275,44 @@ class Solver{
 };
 
 
+
+int manhattan_distance(Board b1, Board b2){
+    //QUAL A DISTANCIA DE CADA PEÇA DO TABULEIRO B1 PARA CHEGAR NO B2?
+    //PARA CADA PECA DE B1
+    //QUAL DEVERIA SER A POSICAO EM B2?
+    //CALCULA DISTANCIA |X1-X2| + |Y1-Y2|
+    
+    // POSICOES
+    // 0   1  2  3  4  5  6  7  8
+    // 00 01 02 10 11 12 20 21 22
+    // Board b = Board("random");
+    // Board t = Board("target");
+    // b.printBoard();
+    // t.printBoard();
+    // cout << "Manhattan distance: " << manhattan_distance(b, t) << endl;
+    int mann_distance = 0;
+    for(int i=0; i<BOARD_SIZE*BOARD_SIZE; i++){
+        for(int j=0; j<BOARD_SIZE*BOARD_SIZE; j++){
+            if (b1.board[i].isnull()) continue;
+            if (b1.board[i].valor==b2.board[j].valor){
+                int x1 = i / BOARD_SIZE;
+                int x2 = j / BOARD_SIZE;
+                int y1 = i % BOARD_SIZE;
+                int y2 = j % BOARD_SIZE;
+                int dist = abs(x1-x2) + abs(y1-y2);
+                mann_distance += dist;
+                cout << "N: " << b1.board[i].valor << " " << x1 << "x" << y1 << " - " << x2 << "x" << y2 << " D:" << dist << endl;
+            }
+        }
+    }
+    return mann_distance;
+}
+
 int main(int argc, char const *argv[])
 {
     srand(time(NULL));
     Board b = Board("random"); //random, fix or target
-    
+
     Solver s;
     s.solveBoardBFS(b, true);  //true BFS
     s.showSolution(b, true);
