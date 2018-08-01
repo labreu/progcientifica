@@ -197,26 +197,22 @@ class Solver{
         }
         
         void showSolution(Board inicial, bool printSolution){
+            string reprInicial = inicial.toString();
             string repr = solution.toString();
-            
-            if (printSolution)
-                cout << endl << "Partindo do target ate o estado inicial" << endl << "=== Printing solution ===" << endl << repr << endl;
-                
-            int c = 0;
-            while (true){
-                if (repr==inicial.toString()) {
-                    cout << "FIM -- " << c << " movimentos." << endl;
-                    movimentos = c;
-                    break;
-                }
-                c++;
-                string pai_repr = cache_map[repr];
-                
-                if (printSolution)
-                    cout << pai_repr << endl;
-                
-                repr = pai_repr;
+            movimentos = 0;
+
+            if (printSolution){
+                cout << endl << "Partindo do target ate o estado inicial" << endl;
+                cout << "=== Printing solution ===" << endl << repr << endl;
             }
+                
+            while (repr!=reprInicial){
+                string pai_repr = cache_map[repr];
+                if (printSolution) cout << pai_repr << endl;
+                repr = pai_repr;
+                movimentos++;
+            }
+            cout << "FIM -- " << movimentos << " movimentos." << endl;
         }
 
         bool solveBoardBFS(Board b, bool useBFS){
@@ -256,7 +252,8 @@ class Solver{
                 board.localizaCelulaNula();
 
                 // Para cada posicao vazia em torno da celula vazia
-                for (int i=0; i<4; i++){
+                // 4 posicoes = cima, baixo, direita e esquerda
+                for (int i=0; i<4; i++){ 
                     if (board.checaMovimentoValido(i)){
                         // Troca celula nula com o vizinho com movimento valido
                         Board nextBoard = board;
