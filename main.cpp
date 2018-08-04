@@ -65,8 +65,13 @@ class Board{
     public:
         Cell board[9];
         Cell celulaNula;
-        Board(){}
+        int mann_distance;
+        int levelArvore;
+
+        Board(): mann_distance(999), levelArvore(0){}
         Board(string tipoInicializacao){
+            mann_distance = 999;
+            levelArvore = 0;
             if (tipoInicializacao == "fix"){
                 initializeFixBoard();
             }
@@ -163,53 +168,40 @@ class Board{
 
             board[pos1] = swp;
         }
-};
 
-
-class No{
-    public:
-        Board b;
-        int h;
-        No():h(-1){}
-        No(Board &b, int h): h(h), b(b){}
-};
-
-bool ordenacao(No n1, No n2){
-    return (n1.h < n2.h);
-}
-
-
-int manhattan_distance(Board b1, Board b2){
-    //QUAL A DISTANCIA DE CADA PEÇA DO TABULEIRO B1 PARA CHEGAR NO B2?
-    //PARA CADA PECA DE B1
-    //QUAL DEVERIA SER A POSICAO EM B2?
-    //CALCULA DISTANCIA |X1-X2| + |Y1-Y2|
-    
-    // POSICOES
-    // 0   1  2  3  4  5  6  7  8
-    // 00 01 02 10 11 12 20 21 22
-    // Board b = Board("random");
-    // Board t = Board("target");
-    // b.printBoard();
-    // t.printBoard();
-    // cout << "Manhattan distance: " << manhattan_distance(b, t) << endl;
-    int mann_distance = 0;
-    for(int i=0; i<BOARD_SIZE*BOARD_SIZE; i++){
-        for(int j=0; j<BOARD_SIZE*BOARD_SIZE; j++){
-            if (b1.board[i].isnull()) continue;
-            if (b1.board[i].valor==b2.board[j].valor){
-                int x1 = i / BOARD_SIZE;
-                int x2 = j / BOARD_SIZE;
-                int y1 = i % BOARD_SIZE;
-                int y2 = j % BOARD_SIZE;
-                int dist = abs(x1-x2) + abs(y1-y2);
-                mann_distance += dist;
-                // cout << "N: " << b1.board[i].valor << " " << x1 << "x" << y1 << " - " << x2 << "x" << y2 << " D:" << dist << endl;
+        void manhattan_distance(Board b2){
+            //QUAL A DISTANCIA DE CADA PEÇA DO TABULEIRO B1 PARA CHEGAR NO B2?
+            //PARA CADA PECA DE B1
+            //QUAL DEVERIA SER A POSICAO EM B2?
+            //CALCULA DISTANCIA |X1-X2| + |Y1-Y2|
+            
+            // POSICOES
+            // 0   1  2  3  4  5  6  7  8
+            // 00 01 02 10 11 12 20 21 22
+            // Board b = Board("random");
+            // Board t = Board("target");
+            // b.printBoard();
+            // t.printBoard();
+            // cout << "Manhattan distance: " << b.manhattan_distance(t) << endl;
+            levelArvore += 1;
+            mann_distance = levelArvore;
+            for(int i=0; i<BOARD_SIZE*BOARD_SIZE; i++){
+                for(int j=0; j<BOARD_SIZE*BOARD_SIZE; j++){
+                    if (board[i].isnull()) continue;
+                    if (board[i].valor==b2.board[j].valor){
+                        int x1 = i / BOARD_SIZE;
+                        int x2 = j / BOARD_SIZE;
+                        int y1 = i % BOARD_SIZE;
+                        int y2 = j % BOARD_SIZE;
+                        int dist = abs(x1-x2) + abs(y1-y2);
+                        mann_distance += dist;
+                        // cout << "N: " << b1.board[i].valor << " " << x1 << "x" << y1 << " - " << x2 << "x" << y2 << " D:" << dist << endl;
+                    }
+                }
             }
+            
         }
-    }
-    return mann_distance;
-}
+};
 
 
 class Solver{
@@ -218,6 +210,7 @@ class Solver{
         Board solution;
         map<string, string> cache_map;
         Board target;
+        list<Board> F;
 
         Solver(): count(0), movimentos(0) {
             // Inicializa Target
@@ -263,7 +256,27 @@ class Solver{
             cout << "FIM -- " << movimentos << " movimentos." << endl;
         }
 
-        bool solveBoardBFS(Board b, bool useBFS, bool useHeuristica){
+        Board getMenorHeuristica(bool AStar){
+            int menorHeuristica = 9999;
+            int auxHeuristica;
+            Board boardMenorHeuristica;
+            list<Board>::iterator it2;
+
+            for (list<Board>::iterator it=F.begin(); it != F.end(); ++it){
+                auxHeuristica = (*it).mann_distance;
+                // cout << "Menor: " << menorHeuristica << " Aux: " << auxHeuristica << endl;
+                if( auxHeuristica < menorHeuristica){
+                    boardMenorHeuristica = *it;
+                    menorHeuristica = auxHeuristica;
+                    it2 = it;
+                }
+            }
+            // cout << "Menor de todas: " << menorHeuristica << endl;
+            
+            F.erase(it2);
+            return boardMenorHeuristica;
+        }
+        bool solveBoardBFS(Board b, bool useBFS, bool AStar){
             if(useBFS) cout << "BFS: " ;
             else cout << "DFS: " ;
 
@@ -271,23 +284,24 @@ class Solver{
             if (checkFim(b) || inCache(b, b)) return true;
 
             // Add a fila/pilha dependendo do argumento useBfs
-            list<Board> F;
             F.push_back(b);
 
             // Enquanto a fila/pilha nao esta vazia
             Board board;
             while(!F.empty()){
-                
+                // cout << "Tamanho fila/pilha: " << F.size() << endl;
+
                 // Coleta um novo "No" da fila/pilha
                 if(useBFS){
                     board = F.front();
                     F.pop_front();
                 }
                 else{ //DFS
-                    board = F.back();
-                    F.pop_back();
+                    // board = F.back();
+                    // F.pop_back();
+                    board = getMenorHeuristica(AStar);
                 }
-             
+
                 // Checa iteracoes
                 count++;
                 if (count > 150000){
@@ -301,7 +315,6 @@ class Solver{
 
                 // Para cada posicao vazia em torno da celula vazia
                 // 4 posicoes = cima, baixo, direita e esquerda
-                vector<No> proximosNos(4);
                 for (int i=0; i<4; i++){ 
                     if (board.checaMovimentoValido(i)){
                         // Troca celula nula com o vizinho com movimento valido
@@ -309,39 +322,21 @@ class Solver{
                         nextBoard.swap(nextBoard.celulaNula.i, nextBoard.celulaNula.vizinhos[i]);
                         
                         // Checa cache
-                        if (inCache(nextBoard, board)) {
-                            proximosNos[i] = No();
-                            continue;
-                        }
+                        if (inCache(nextBoard, board)) continue;
+                        
 
                         // Checa fim
                         if (checkFim(nextBoard)) return true;
                         
-                        if (useHeuristica){
+                        if (AStar){
                             // Calcula heuristica
-                            int md = manhattan_distance(nextBoard, target);
-                            proximosNos[i] = No(nextBoard, md);
-                            // cout << "MD: " << proximosNos[i].h << endl;
+                            nextBoard.manhattan_distance(target);
                         }
-                        else{
-                            F.push_back(nextBoard);
-                        }
+                        
+                        // Coloca na fila/pilha
+                        F.push_back(nextBoard);
                     }
-                    else{
-                        proximosNos[i] = No();
-                    }
-                }
-
-                if (useHeuristica){
-                    // Ordena best first search
-                    sort(proximosNos.begin(), proximosNos.end(), ordenacao);
                     
-                    // Adiciona a fila/pilha
-                    for(int i=0; i< 4; i++){
-                        if (proximosNos[i].h < 0) continue;
-                        // cout << "H: " << proximosNos[i].h << endl;
-                        F.push_back(proximosNos[i].b);
-                    }
                 }
             }
             return false;
@@ -358,16 +353,16 @@ int main(int argc, char const *argv[])
     // Breadth first search
     Solver s;
     s.solveBoardBFS(b, true, false);  
-    // s.showSolution(b, false);
+    s.showSolution(b, false);
 
-    // Best first search
-    s = Solver();
-    s.solveBoardBFS(b, true, true); 
-    // s.showSolution(b, false);
+    // // Best first search
+    // s = Solver();
+    // s.solveBoardBFS(b, true, true); 
+    // // s.showSolution(b, false);
 
     // Depth first search
     s = Solver();
-    s.solveBoardBFS(b, false, false); 
-    // s.showSolution(b, false);
+    s.solveBoardBFS(b, false, true); 
+    s.showSolution(b, false);
    
 }   
