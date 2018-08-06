@@ -149,7 +149,7 @@ class Board{
                     move = i;
                     
                 }
-                cout << i << " " << score << endl;
+                // cout << i << " " << score << endl;
                 board[i] = UNPLAYED_CELL;
             }
         }
