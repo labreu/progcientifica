@@ -79,7 +79,7 @@ class Board{
                 initializeTargetBoard();
             }
             else{
-                cout << "Tabuleiro iniciado aleatoriamente" << endl;
+                // cout << "Tabuleiro iniciado aleatoriamente" << endl;
                 initializeRandomBoard();
             }
             // printBoard();
@@ -128,6 +128,7 @@ class Board{
                     n++;
                 }   
             }
+
         }
 
         string toString(){
@@ -169,22 +170,13 @@ class Board{
             board[pos1] = swp;
         }
 
-        void manhattan_distance(Board b2){
-            //QUAL A DISTANCIA DE CADA PEÇA DO TABULEIRO B1 PARA CHEGAR NO B2?
-            //PARA CADA PECA DE B1
-            //QUAL DEVERIA SER A POSICAO EM B2?
+        void manhattan_distance(Board b2, bool heuristicaG){
             //CALCULA DISTANCIA |X1-X2| + |Y1-Y2|
             
-            // POSICOES
-            // 0   1  2  3  4  5  6  7  8
-            // 00 01 02 10 11 12 20 21 22
-            // Board b = Board("random");
-            // Board t = Board("target");
-            // b.printBoard();
-            // t.printBoard();
-            // cout << "Manhattan distance: " << b.manhattan_distance(t) << endl;
             levelArvore += 1;
-            mann_distance = levelArvore;
+            if (heuristicaG)  mann_distance = levelArvore;
+            else mann_distance = 0;
+
             for(int i=0; i<BOARD_SIZE*BOARD_SIZE; i++){
                 for(int j=0; j<BOARD_SIZE*BOARD_SIZE; j++){
                     if (board[i].isnull()) continue;
@@ -195,12 +187,21 @@ class Board{
                         int y2 = j % BOARD_SIZE;
                         int dist = abs(x1-x2) + abs(y1-y2);
                         mann_distance += dist;
-                        // cout << "N: " << b1.board[i].valor << " " << x1 << "x" << y1 << " - " << x2 << "x" << y2 << " D:" << dist << endl;
                     }
                 }
             }
-            
         }
+};
+
+class SalvaDados{
+    public:
+        string dados;
+        SalvaDados():dados(""){}
+
+    void log(string s){
+        dados += s ;
+    }
+
 };
 
 
@@ -211,6 +212,9 @@ class Solver{
         map<string, string> cache_map;
         Board target;
         list<Board> F;
+        SalvaDados sd;
+        clock_t t1, t2;
+        double differenceSeconds;
 
         Solver(): count(0), movimentos(0) {
             // Inicializa Target
@@ -221,7 +225,7 @@ class Solver{
             // Checa se o board recebido é o target desejado
             if (b==target){
                 solution = b;
-                cout << "Solved! " << count << " iterations." << endl;
+                // cout << "Solved! " << count << " iterations." << endl;
                 return true;
             }
             return false;
@@ -237,6 +241,10 @@ class Solver{
             return true;
         }
         
+        void log_data(){
+            sd.log(to_string(differenceSeconds) + "," + to_string(movimentos) + "," + to_string(count));
+        }
+
         void showSolution(Board inicial, bool printSolution){
             string reprInicial = inicial.toString();
             string repr = solution.toString();
@@ -253,10 +261,11 @@ class Solver{
                 repr = pai_repr;
                 movimentos++;
             }
-            cout << "FIM -- " << movimentos << " movimentos." << endl;
+            // cout << "FIM -- " << movimentos << " movimentos." << endl;
+            log_data();
         }
 
-        Board getMenorHeuristica(bool AStar){
+        Board getMenorHeuristica(){
             int menorHeuristica = 9999;
             int auxHeuristica;
             Board boardMenorHeuristica;
@@ -264,24 +273,23 @@ class Solver{
 
             for (list<Board>::iterator it=F.begin(); it != F.end(); ++it){
                 auxHeuristica = (*it).mann_distance;
-                // cout << "Menor: " << menorHeuristica << " Aux: " << auxHeuristica << endl;
                 if( auxHeuristica < menorHeuristica){
                     boardMenorHeuristica = *it;
                     menorHeuristica = auxHeuristica;
                     it2 = it;
                 }
             }
-            // cout << "Menor de todas: " << menorHeuristica << endl;
-            
             F.erase(it2);
             return boardMenorHeuristica;
         }
-        bool solveBoardBFS(Board b, bool useBFS, bool AStar){
-            if(useBFS) cout << "BFS: " ;
-            else cout << "DFS: " ;
+        bool solveBoardBFS(Board b, char opcao, bool heuristicaG){
+            t1 = clock();
 
             // Checa fim e adiciona ao cache
-            if (checkFim(b) || inCache(b, b)) return true;
+            if (checkFim(b) || inCache(b, b)) {
+                differenceSeconds = ( ( (float) clock() ) - ( (float) t1 ) )/(double) CLOCKS_PER_SEC; 
+                return true;
+            }
 
             // Add a fila/pilha dependendo do argumento useBfs
             F.push_back(b);
@@ -292,21 +300,33 @@ class Solver{
                 // cout << "Tamanho fila/pilha: " << F.size() << endl;
 
                 // Coleta um novo "No" da fila/pilha
-                if(useBFS){
-                    board = F.front();
-                    F.pop_front();
-                }
-                else{ //DFS
-                    // board = F.back();
-                    // F.pop_back();
-                    board = getMenorHeuristica(AStar);
+                switch(opcao){
+                    case 'b':{
+                        board = F.front();
+                        F.pop_front();
+                        break;
+                    }
+                    case 'd':{
+                        board = F.back();
+                        F.pop_back();
+                        break;
+                    }
+                    case 'a':
+                        board = getMenorHeuristica(); 
+                        break;
+                    case 'f':
+                        board = getMenorHeuristica(); 
+                        break;
+                    default:
+                        cout << "Opcao invalida" << endl;
+                        return false;
                 }
 
                 // Checa iteracoes
                 count++;
-                if (count > 150000){
+                if (count > 140000){
                     solution = board;
-                    cout << "Parando execucao apos 150k nós gerados" << endl;
+                    // cout << "Parando execucao apos 150k nós gerados" << endl;
                     break;
                 }
                 
@@ -326,12 +346,13 @@ class Solver{
                         
 
                         // Checa fim
-                        if (checkFim(nextBoard)) return true;
+                        if (checkFim(nextBoard)) {
+                            differenceSeconds = ( ( (float) clock() ) - ( (float) t1 ) )/(double) CLOCKS_PER_SEC; 
+                            return true;
+                        };
                         
-                        if (AStar){
-                            // Calcula heuristica
-                            nextBoard.manhattan_distance(target);
-                        }
+                        // Calcula heuristica
+                        if (opcao=='a' || opcao=='f') nextBoard.manhattan_distance(target, heuristicaG);
                         
                         // Coloca na fila/pilha
                         F.push_back(nextBoard);
@@ -339,6 +360,8 @@ class Solver{
                     
                 }
             }
+            
+            differenceSeconds = ( ( (float) clock() ) - ( (float) t1 ) )/(double) CLOCKS_PER_SEC; 
             return false;
         }
 };
@@ -348,21 +371,23 @@ class Solver{
 int main(int argc, char const *argv[])
 {
     srand(time(NULL));
-    Board b = Board("random"); //random, fix or target
-
-    // Breadth first search
     Solver s;
-    s.solveBoardBFS(b, true, false);  
-    s.showSolution(b, false);
+    char metodos[] = {'b', 'd', 'a', 'f'};
+    bool heuristicaG;
+    
+    for(int j=0; j<200; j++){
+        Board b = Board("random"); //random, fix or target
+        if (b==s.target) continue;
 
-    // // Best first search
-    // s = Solver();
-    // s.solveBoardBFS(b, true, true); 
-    // // s.showSolution(b, false);
+        for(int k=0; k<4; k++){
+            
+            if (metodos[k] == 'a') heuristicaG = true;
+            else heuristicaG = false;
 
-    // Depth first search
-    s = Solver();
-    s.solveBoardBFS(b, false, true); 
-    s.showSolution(b, false);
-   
+            s = Solver();
+            s.solveBoardBFS(b, metodos[k], heuristicaG);  
+            s.showSolution(b, false);
+            cout << metodos[k] << "," << s.sd.dados << endl;
+        }
+    }  
 }   
